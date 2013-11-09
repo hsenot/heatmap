@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 10px sans-serif;
+  shape-rendering: crispEdges;
+}
+
+.halfhour {
+  fill: #fff;
+  stroke: #222;
+}
+
+</style>
+<body>
+<script src="d3/d3.v3.min.js"></script>
+<script src="date.js"></script>
+<script>
+
+// Inspired from example at: http://bl.ocks.org/mbostock/4063318
+// Another good example could be: http://bl.ocks.org/tjdecke/5558084
+// Another example for analysis of hourly patterns within a week could be: http://prcweb.co.uk/lab/circularheat/
+// Using the floor plan with D3: http://dciarletta.github.io/d3-floorplan/
+var QueryString = function () {
+  // This function is anonymous, is executed immediately and 
+  // the return value is assigned to QueryString!
+  var query_string = {};
+  var query = window.location.search.substring(1);
+  var vars = query.split("&");
+  for (var i=0;i<vars.length;i++) {
+    var pair = vars[i].split("=");
+      // If first entry with this name
+    if (typeof query_string[pair[0]] === "undefined") {
+      query_string[pair[0]] = pair[1];
+      // If second entry with this name
+    } else if (typeof query_string[pair[0]] === "string") {
+      var arr = [ query_string[pair[0]], pair[1] ];
+      query_string[pair[0]] = arr;
+      // If third or later entry with this name
+    } else {
+      query_string[pair[0]].push(pair[1]);
+    }
+  } 
+    return query_string;
+} ();
+
+var data,color;
+
+// Current data file
+var cdf = "1";
+
+var config = {
+  "1" : {
+    "filename":"20120628-20130627-smart-meter-data.csv",
+    "retailerFormat":"Origin-default",
+    "columns": {
+      "date":"Day",
+      "dateFormat":"d/M/yyyy",
+      "time":"EndPeriod",
+      "power":"KW"
+    },
+    "start": {
+      "offsetYear": 0,
+      "offsetWeek": 27,
+      "weekNumber": 10
+    },   
+    "dateStart":"27/06/2012",
+    "extraOffset":0
+  },
+  "2" : {
+    "filename":"2011.01.01-2012.12.30-30mn.csv",
+    "retailerFormat":"Origin-industrial",
+    "columns": {
+      "date":"Day",
+      "dateFormat":"d/M/yyyy",
+      "time":"Period",
+      "power":"KW"
+    },
+    "start": {
+      "offsetYear": 0,
+      "offsetWeek": 0,
+      "weekNumber": 10
+    },   
+    "dateStart":"1/1/2011",
+    "extraOffset":0
+  },
+  "3" : {
+    "filename":"MyUsageData_07-11-2013.csv",
+    "retailerFormat":"AGL",
+    "columns": {
+      "date":"StartDate",
+      "dateFormat":"d/M/yyyy",
+      "time":"StartDate",
+      "power":"ProfileReadValue"
+    },
+    "start": {
+      "offsetYear": 0,
+      "offsetWeek": 0,
+      "weekNumber": 10
+    },   
+    "dateStart":"6/11/2011",
+    "extraOffset":1
+  }
+};
+
+// Various variables :-)
+var dataFile = config[cdf].filename;
+var cellSize = 5;
+var dateStart = new Date.parseExact(config[cdf].dateStart,"d/M/yyyy");
+var weekOffset = QueryString.weekStart?QueryString.weekStart:config[cdf].start.offsetWeek;
+var weekNumber = QueryString.weekNumber?QueryString.weekNumber:config[cdf].start.weekNumber;
+var yearOffset = QueryString.year?QueryString.year:config[cdf].start.offsetYear;
+var numDays = weekNumber*7, offset = yearOffset*365+weekOffset*7;
+var width = (numDays+1)*cellSize*2,
+    height = (48+1)*cellSize+150;
+
+
+// Number the period, so as to be able to apply the correct translation on y axis
+var periodNb = {
+  "12:30:00 AM":1, "01:00:00 AM":2, "01:30:00 AM":3, "02:00:00 AM":4, "02:30:00 AM":5, "03:00:00 AM":6, "03:30:00 AM":7, "04:00:00 AM":8,
+  "04:30:00 AM":9, "05:00:00 AM":10,"05:30:00 AM":11,"06:00:00 AM":12,"06:30:00 AM":13,"07:00:00 AM":14,"07:30:00 AM":15,"08:00:00 AM":16,
+  "08:30:00 AM":17,"09:00:00 AM":18,"09:30:00 AM":19,"10:00:00 AM":20,"10:30:00 AM":21,"11:00:00 AM":22,"11:30:00 AM":23,"12:00:00 PM":24,
+  "12:30:00 PM":25,"01:00:00 PM":26,"01:30:00 PM":27,"02:00:00 PM":28,"02:30:00 PM":29,"03:00:00 PM":30,"03:30:00 PM":31,"04:00:00 PM":32,
+  "04:30:00 PM":33,"05:00:00 PM":34,"05:30:00 PM":35,"06:00:00 PM":36,"06:30:00 PM":37,"07:00:00 PM":38,"07:30:00 PM":39,"08:00:00 PM":40,
+  "08:30:00 PM":41,"09:00:00 PM":42,"09:30:00 PM":43,"10:00:00 PM":44,"10:30:00 PM":45,"11:00:00 PM":46,"11:30:00 PM":47,"12:00:00 AM":48
+};
+
+var toPeriodNumber = function(retailerFormat, inData){
+  // Translation of the retailer period info into a period number (1 to 48)
+  if (retailerFormat == "Origin-default")
+  {
+    return periodNb[inData];
+  }
+
+  if (retailerFormat == "AGL")
+  {
+    var h = inData.split(" ").splice(1,2).join(" ");
+    if (h.match(/^[1-9]:/))
+    {
+      h = "0"+h;
+    }
+    return (periodNb[h])%48+1;
+  }
+
+  // Default behaviour: pass thru
+  return inData;
+};
+
+var toDayNumber  = function(retailerFormat, inData){
+  // Default day extraction
+  var d;
+
+  // Translating the day into the column number (1 to X)
+  if (retailerFormat == "AGL")
+  {
+    d = new Date.parseExact(inData.split(" ")[0],config[cdf].columns.dateFormat).clearTime();
+  }
+  else
+  {
+    d = new Date.parseExact(inData,config[cdf].columns.dateFormat).clearTime();
+  }
+
+  // Default behaviour
+  return (d - dateStart)/(1000*60*60*24) + 1 - offset;
+}
+
+var day = d3.time.format("%w"),
+    week = d3.time.format("%U"),
+    percent = d3.format(".1%"),
+    format = d3.time.format("%d/%m/%Y");
+
+var hourStringFromPeriodNumber = function(periodNb){
+  var hour = Math.floor(periodNb / 2) % 24;
+  var minute = (periodNb % 2) * 3;
+  return hour+":"+minute+"0"; 
+}
+
+// Using a single range (may use months/quarters ranges at a later stage)
+var svg = d3.select("body").selectAll("svg")
+    .data(d3.range(1, 2))
+  .enter().append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("class", "RdYlGn")
+  .append("g")
+    .attr("transform", "translate(" + 20 + "," + 20 + ")");
+
+/*
+svg.append("text")
+    .attr("transform", "translate(6," + cellSize * 3.5 + ")rotate(-90)")
+    .style("text-anchor", "middle")
+    .text(function(d) { return d; });
+*/
+
+var rect = svg.selectAll(".halfhour")
+    .data(
+      d3.range(1+(offset*48),48*(numDays+offset)+1)
+    )
+  .enter().append("rect")
+    .attr("width", cellSize)
+    .attr("height", cellSize)
+;
+
+d3.csv("data/"+dataFile, function(error, csv) {
+  data = csv.map(function(r) {
+    return {
+        "Day":r[config[cdf].columns.date],
+        "Period":toPeriodNumber(config[cdf].retailerFormat,r[config[cdf].columns.time]),
+        "kW":r[config[cdf].columns.power]
+    };
+  });
+
+  var minData, maxData, avgData = 0.0;
+  for (i in data)
+  {
+    if (!minData || minData > data[i].kW)
+    {
+      minData = data[i].kW;
+    }
+    if (!maxData || maxData < data[i].kW)
+    {
+      maxData = data[i].kW;
+    }
+    avgData += parseFloat(data[i].kW);
+  }
+
+  minData = parseFloat(minData);
+  maxData = parseFloat(maxData);
+  avgData = (minData+maxData)/2;
+
+  color = d3.scale.linear()
+    .domain([minData, avgData, maxData])
+    .range(["green", "yellow", "red"]);
+
+  rect.
+    attr("class", function(d) {
+        return "halfhour";
+    })
+    .attr("style", function(d) {
+      return "fill:"+color(data[d-1].kW)+";";
+    })
+    .attr("x", function(d) {
+      return toDayNumber(config[cdf].retailerFormat,data[d-1].Day) * cellSize; 
+    })
+    .attr("y", function(d) { 
+      return data[d-1].Period * cellSize; 
+    })
+    .append("title")
+      .text(function(d) {
+        return data[d-1].Day.split(" ")[0]+" ("+hourStringFromPeriodNumber(data[d-1].Period)+"): "+data[d-1].kW+"kWh";
+      });
+});
+
+d3.select(self.frameElement).style("height", "2910px");
+
+</script></body></html>
