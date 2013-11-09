@@ -1,0 +1,5 @@
+# Restricted access
+data/
+
+# Libraries better off as submodules?
+
