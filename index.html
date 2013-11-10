@@ -48,7 +48,7 @@ var QueryString = function () {
 var data,color;
 
 // Current data file
-var cdf = "1";
+var cdf = "4";
 
 var config = {
   "1" : {
@@ -101,7 +101,24 @@ var config = {
     },   
     "dateStart":"6/11/2011",
     "extraOffset":1
-  }
+  },
+  "4" : {
+    "filename":"nmi.csv",
+    "retailerFormat":"Origin-default",
+    "columns": {
+      "date":"Day",
+      "dateFormat":"d/M/yyyy",
+      "time":"EndPeriod",
+      "power":"KW"
+    },
+    "start": {
+      "offsetYear": 0,
+      "offsetWeek": 0,
+      "weekNumber": 23
+    },   
+    "dateStart":"13/03/2013",
+    "extraOffset":0
+  }  
 };
 
 // Various variables :-)
