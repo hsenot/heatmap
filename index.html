@@ -48,7 +48,7 @@ var QueryString = function () {
 var data,color;
 
 // Current data file
-var cdf = "4";
+var cdf = "5";
 
 var config = {
   "1" : {
@@ -118,7 +118,24 @@ var config = {
     },   
     "dateStart":"13/03/2013",
     "extraOffset":0
-  }  
+  },
+  "5" : {
+    "filename":"Electricity_Consumption_Data_Flat.csv",
+    "retailerFormat":"Origin-default",
+    "columns": {
+      "date":"Day",
+      "dateFormat":"d/M/yyyy",
+      "time":"EndPeriod",
+      "power":"KW"
+    },
+    "start": {
+      "offsetYear": 0,
+      "offsetWeek": 0,
+      "weekNumber": 30
+    },   
+    "dateStart":"01/02/2013",
+    "extraOffset":0
+  } 
 };
 
 // Various variables :-)
