@@ -65,8 +65,7 @@ var data,color;
 var cellSize = 7;
 var nbPrdByDay = 48;
 var offset = 0;
-// Client 5 only has 72 days of data :-(
-var nbDays = 72;
+var nbDays = 90;
 var width = (nbDays+1)*cellSize*2,
     height = (nbPrdByDay+1)*cellSize+150;
 var hourPrd = {
@@ -89,11 +88,6 @@ var dayToString  = function(inData,format){
   return dt.toString(format);
 }
 
-var day = d3.time.format("%w"),
-    week = d3.time.format("%U"),
-    percent = d3.format(".1%"),
-    format = d3.time.format("%d/%m/%Y");
-
 // Using a single range (may use months/quarters ranges at a later stage)
 var svg = d3.select("body").selectAll("svg")
     .data(d3.range(1, 2))
@@ -104,22 +98,7 @@ var svg = d3.select("body").selectAll("svg")
   .append("g")
     .attr("transform", "translate(" + 40 + "," + 20 + ")");
 
-/*
-svg.append("text")
-    .attr("transform", "translate(6," + cellSize * 3.5 + ")rotate(-90)")
-    .style("text-anchor", "middle")
-    .text(function(d) { return d; });
-*/
-
-var rect = svg.selectAll(".halfhour")
-  .data(
-    d3.range(1+(offset*nbPrdByDay),nbPrdByDay*(nbDays+offset)+1)
-  )
-  .enter().append("rect")
-    .attr("width", cellSize)
-    .attr("height", cellSize)
-;
-
+// Ingestion of the client data as served by the web service (JSON)
 d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, json) {
   if (error) return console.warn(error);
   data = json.rows;
@@ -127,20 +106,22 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
   // Number of days that are first of the month (i.e. to label)
   var datesToLabel=[];
 
-  var minData, maxData, avgData = 0.0;
+  var currentData, minData, maxData, avgData = 0.0;
   for (i in data)
   {
-    if (!minData || minData > data[i].k)
-    {
-      minData = data[i].k;
-    }
-    if (!maxData || maxData < data[i].k)
-    {
-      maxData = data[i].k;
-    }
-    avgData += parseFloat(data[i].k);
+    currentData = parseFloat(data[i].k);
 
-    if (dayToString(data[i].d,'d')=="1" && data[i].p ==1)
+    if (!minData || minData > currentData)
+    {
+      minData = currentData;
+    }
+    if (!maxData || maxData < currentData)
+    {
+      maxData = currentData;
+    }
+    avgData += currentData;
+
+    if (data[i].p ==1 && dayToString(data[i].d,'d')=="1")
     {
       datesToLabel.push(data[i].d);
     }
@@ -156,6 +137,18 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
   color = d3.scale.linear()
     .domain([minData, avgData, maxData])
     .range(["green", "yellow", "red"]);
+
+  // Request only as many days as the data can support
+  nbDays = Math.min(nbDays,data.length/nbPrdByDay);
+
+  var rect = svg.selectAll(".halfhour")
+    .data(
+      d3.range(1+(offset*nbPrdByDay),nbPrdByDay*(nbDays+offset)+1)
+    )
+    .enter().append("rect")
+      .attr("width", cellSize)
+      .attr("height", cellSize)
+  ;
 
   rect.
     attr("class", function(d) {
@@ -182,38 +175,33 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
         .text(function (d) { 
           return hourPrd[d];
         })
-        .attr("x", 0)
-        .attr("y", function (d, i) { return i * cellSize; })
-        // 18 might be dependent on the cell size, same with the font size of this label
-        .attr("transform", "translate(-30,18)")
+        .attr("x", -30)
+        .attr("y", function (d, i) { return i * cellSize + 3*cellSize-6; })
         .attr("class", function (d, i) { return "hourLabel mono"; });
 
   var monthLabel = svg.selectAll(".monthLabel")
-      .data(d3.range(1,datesToLabel.length))
+      .data(d3.range(1,datesToLabel.length+1))
       .enter().append("text")
         .text(function (d) { 
           return dayToString(datesToLabel[d-1],'MMMM');
         })
         .attr("x", function (d, i) {
-          return (datesToLabel[d-1]-dayStart) * cellSize;
+          return (datesToLabel[d-1]-dayStart + 10) * cellSize;
         })
         .attr("y", 0)
-        .attr("transform", "translate("+10*cellSize+",0)")
         .attr("class", function (d, i) { return "monthLabel title"; });
 
   var monthFirstLabel = svg.selectAll(".monthFirstLabel")
-      .data(d3.range(1,datesToLabel.length))
+      .data(d3.range(1,datesToLabel.length+1))
       .enter().append("text")
         .text(function (d) { 
           return '|';
         })
         .attr("x", function (d, i) {
-          return (datesToLabel[d-1]-dayStart) * cellSize;
+          return (datesToLabel[d-1]-dayStart-cellSize/2) * cellSize;
         })
-        .attr("y", 0)
-        .attr("transform", "translate(-"+cellSize/2+","+cellSize/2+")")
+        .attr("y", cellSize/2)
         .attr("class", function (d, i) { return "monthFirstLabel mono"; });
-
 
 });
 
