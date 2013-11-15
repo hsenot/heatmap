@@ -9,3 +9,8 @@ pdf2txt.py -o /tmp/nmi.txt -M 10 $1
 # Extracting only lines that start with a day of the week abbreviation
 cat /tmp/nmi.txt | grep '^Mon \|^Tue \|^Wed \|^Thu \|^Fri \|^Sat \|^Sun ' > out/nmi.txt
 
+# Loading the content of this temporary file in the staging table
+DIR=$(cd $(dirname "$0"); pwd)
+psql -U ee_app -d ee -c "truncate table staging_origin1"
+psql -U ee_app -d ee -c "copy staging_origin1 (content) from '$DIR/out/nmi.txt'"
+
