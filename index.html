@@ -104,7 +104,7 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
   data = json.rows;
 
   // Number of days that are first of the month (i.e. to label)
-  var datesToLabel=[];
+  var datesToLabel=[], weekEndToLabel = [], dayOfTheWeek;
 
   var currentData, minData, maxData, avgData = 0.0;
   for (i in data)
@@ -121,9 +121,17 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
     }
     avgData += currentData;
 
-    if (data[i].p ==1 && dayToString(data[i].d,'d')=="1")
+    if (data[i].p ==1)
     {
-      datesToLabel.push(data[i].d);
+      if (dayToString(data[i].d,'d')=="1")
+      {
+        datesToLabel.push(data[i].d);
+      }
+      dayOfTheWeek = dayToString(data[i].d,'dddd');
+      if (dayOfTheWeek=="Saturday" || dayOfTheWeek=="Sunday")
+      {
+        weekEndToLabel.push(data[i].d);
+      }
     }
   }
 
@@ -202,6 +210,18 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
         })
         .attr("y", cellSize/2+2)
         .attr("class", function (d, i) { return "mfl m"; });
+
+  var weekendLabel = svg.selectAll(".wl")
+      .data(d3.range(1,weekEndToLabel.length+1))
+      .enter().append("text")
+        .text(function (d) { 
+          return '^';
+        })
+        .attr("x", function (d, i) {
+          return (weekEndToLabel[d-1]-dayStart) * cellSize+0.5;
+        })
+        .attr("y", cellSize/2+5)
+        .attr("class", function (d, i) { return "wl m"; });
 
 });
 
