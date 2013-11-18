@@ -7,12 +7,12 @@ body {
   shape-rendering: crispEdges;
 }
 
-.halfhour {
+.hh {
   fill: #fff;
   stroke: #222;
 }
 
-text.mono {
+text.m {
   font-size: 7pt;
   font-family: Consolas, courier;
   fill: #666;
@@ -141,7 +141,7 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
   // Request only as many days as the data can support
   nbDays = Math.min(nbDays,data.length/nbPrdByDay);
 
-  var rect = svg.selectAll(".halfhour")
+  var rect = svg.selectAll(".hh")
     .data(
       d3.range(1+(offset*nbPrdByDay),nbPrdByDay*(nbDays+offset)+1)
     )
@@ -152,7 +152,7 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
 
   rect.
     attr("class", function(d) {
-        return "halfhour";
+        return "hh";
     })
     .attr("style", function(d) {
       return "fill:"+color(data[d-1].k)+";";
@@ -169,7 +169,7 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
       });
 
   // Adding the labels for the hours
-  var hourLabels = svg.selectAll(".hourLabel")
+  var hourLabels = svg.selectAll(".hl")
       .data(d3.range(1,48))
       .enter().append("text")
         .text(function (d) { 
@@ -177,9 +177,9 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
         })
         .attr("x", -30)
         .attr("y", function (d, i) { return i * cellSize + 3*cellSize-6; })
-        .attr("class", function (d, i) { return "hourLabel mono"; });
+        .attr("class", function (d, i) { return "hl m"; });
 
-  var monthLabel = svg.selectAll(".monthLabel")
+  var monthLabel = svg.selectAll(".ml")
       .data(d3.range(1,datesToLabel.length+1))
       .enter().append("text")
         .text(function (d) { 
@@ -188,20 +188,20 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
         .attr("x", function (d, i) {
           return (datesToLabel[d-1]-dayStart + 10) * cellSize;
         })
-        .attr("y", 0)
-        .attr("class", function (d, i) { return "monthLabel title"; });
+        .attr("y", -4)
+        .attr("class", function (d, i) { return "ml title"; });
 
-  var monthFirstLabel = svg.selectAll(".monthFirstLabel")
+  var monthFirstLabel = svg.selectAll(".mfl")
       .data(d3.range(1,datesToLabel.length+1))
       .enter().append("text")
         .text(function (d) { 
           return '|';
         })
         .attr("x", function (d, i) {
-          return (datesToLabel[d-1]-dayStart-cellSize/2) * cellSize;
+          return (datesToLabel[d-1]-dayStart-1/2) * cellSize+0.5;
         })
-        .attr("y", cellSize/2)
-        .attr("class", function (d, i) { return "monthFirstLabel mono"; });
+        .attr("y", cellSize/2+2)
+        .attr("class", function (d, i) { return "mfl m"; });
 
 });
 
