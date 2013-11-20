@@ -64,8 +64,8 @@ var clientId = QueryString.client_id;
 var data,color;
 var cellSize = 7;
 var nbPrdByDay = 48;
-var offset = 0;
-var nbDays = 365;
+var offset = QueryString.offset?parseInt(QueryString.offset):0;
+var nbDays = QueryString.days?parseInt(QueryString.days):180;
 var width = (nbDays+1)*cellSize*2,
     height = (nbPrdByDay+1)*cellSize+150;
 var hourPrd = {
@@ -88,26 +88,23 @@ var dayToString  = function(inData,format){
   return dt.toString(format);
 }
 
-// Using a single range (may use months/quarters ranges at a later stage)
-var svg = d3.select("body").selectAll("svg")
-    .data(d3.range(1, 2))
-  .enter().append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("class", "RdYlGn")
-  .append("g")
-    .attr("transform", "translate(" + 40 + "," + 20 + ")");
-
 // Ingestion of the client data as served by the web service (JSON)
 d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, json) {
   if (error) return console.warn(error);
-  data = json.rows;
+
+  // Subset of the original dataset to be read into data based on an:
+  // Offset
+  // Number of days of data
+  var nbDataItemsToRead = Math.min(json.rows.length-offset*48, nbDays*48);
+
+  data = json.rows.slice(offset*48,nbDataItemsToRead+offset*48);
 
   // Number of days that are first of the month (i.e. to label)
   var datesToLabel=[], weekEndToLabel = [], dayOfTheWeek;
 
   var currentData, minData, maxData, avgData = 0.0;
-  for (i in data)
+  
+  for (i=0;i<nbDataItemsToRead;i++)
   {
     currentData = parseFloat(data[i].k);
 
@@ -149,9 +146,19 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
   // Request only as many days as the data can support
   nbDays = Math.min(nbDays,data.length/nbPrdByDay);
 
+  // Using a single range (may use months/quarters ranges at a later stage)
+  var svg = d3.select("body").selectAll("svg")
+      .data(d3.range(1, 2))
+    .enter().append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("class", "RdYlGn")
+    .append("g")
+      .attr("transform", "translate(" + 40 + "," + 20 + ")");
+
   var rect = svg.selectAll(".hh")
     .data(
-      d3.range(1+(offset*nbPrdByDay),nbPrdByDay*(nbDays+offset)+1)
+      d3.range(1,nbDataItemsToRead+1)
     )
     .enter().append("rect")
       .attr("width", cellSize)
