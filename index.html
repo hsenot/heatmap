@@ -1,5 +1,8 @@
 <!DOCTYPE html>
+<html>
+<head>
 <meta charset="utf-8">
+<link rel="stylesheet" href="jQRangeSlider/css/iThing.css" type="text/css" />
 <style>
 
 body {
@@ -25,10 +28,22 @@ text.title {
 }
 
 </style>
+</head>
 <body>
+
+<div style="padding-left:50px;padding-right:50px;">
+  <div id="dateSlider"></div>
+</div>
+
 <script src="d3/d3.v3.min.js"></script>
 <script src="date.js"></script>
+<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+<!--script src="../lib/jquery.mousewheel.min.js"></script -->
+<script src="jQRangeSlider/jQDateRangeSlider-min.js"></script>
 <script>
+
+
 
 // Inspired from example at: http://bl.ocks.org/mbostock/4063318
 // Another good example could be: http://bl.ocks.org/tjdecke/5558084
@@ -61,7 +76,8 @@ var QueryString = function () {
 var clientId = QueryString.client_id;
 
 // Various variables :-)
-var data,color;
+var full_data,color;
+var svg,rect;
 var cellSize = 7;
 var nbPrdByDay = 48;
 var offset = QueryString.offset?parseInt(QueryString.offset):0;
@@ -88,25 +104,29 @@ var dayToString  = function(inData,format){
   return dt.toString(format);
 }
 
-// Ingestion of the client data as served by the web service (JSON)
-d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, json) {
-  if (error) return console.warn(error);
+var renderData = function(p_json,p_nbDays,p_offset){
+  // Number of days of data should be less than total data available
+  var nbDataItemsToRead = Math.min(p_json.length-p_offset*48, p_nbDays*48);
 
-  // Subset of the original dataset to be read into data based on an:
-  // Offset
-  // Number of days of data
-  var nbDataItemsToRead = Math.min(json.rows.length-offset*48, nbDays*48);
+  // Offset and number of days allow to slice the data to just the piece needed
+  var data = p_json.slice(p_offset*48,nbDataItemsToRead+p_offset*48+1);
 
-  data = json.rows.slice(offset*48,nbDataItemsToRead+offset*48);
-
-  // Number of days that are first of the month (i.e. to label)
+  // Arrays to store elements to label
   var datesToLabel=[], weekEndToLabel = [], dayOfTheWeek;
 
   var currentData, minData, maxData, avgData = 0.0;
   
+  // Data scanning to set min/max/avg and flag elements to label
   for (i=0;i<nbDataItemsToRead;i++)
   {
-    currentData = parseFloat(data[i].k);
+    if (data[i])
+    {
+      currentData = parseFloat(data[i].k);
+    }
+    else
+    {
+      console.log("No data at index "+i);
+    }
 
     if (!minData || minData > currentData)
     {
@@ -144,19 +164,19 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
     .range(["green", "yellow", "red"]);
 
   // Request only as many days as the data can support
-  nbDays = Math.min(nbDays,data.length/nbPrdByDay);
+  var nbDays = Math.min(p_nbDays,data.length/nbPrdByDay);
 
   // Using a single range (may use months/quarters ranges at a later stage)
-  var svg = d3.select("body").selectAll("svg")
-      .data(d3.range(1, 2))
+  svg = d3.select("body").selectAll("svg")
+      .data(d3.range(1, 1+1))
     .enter().append("svg")
       .attr("width", width)
       .attr("height", height)
       .attr("class", "RdYlGn")
     .append("g")
-      .attr("transform", "translate(" + 40 + "," + 20 + ")");
+      .attr("transform", "translate(" + 40 + "," + 60 + ")");
 
-  var rect = svg.selectAll(".hh")
+  rect = svg.selectAll(".hh")
     .data(
       d3.range(1,nbDataItemsToRead+1)
     )
@@ -229,9 +249,57 @@ d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, j
         })
         .attr("y", cellSize/2+5)
         .attr("class", function (d, i) { return "wl m"; });
+}
+
+var refreshVizFromSlider = function(){
+    // Calculate the number of days
+    var nd = Math.round(($("#dateSlider").dateRangeSlider("values").max - $("#dateSlider").dateRangeSlider("values").min)/ (1000 * 3600 * 24));
+    // Calculate the offset
+    var os = Math.round(($("#dateSlider").dateRangeSlider("values").min - $("#dateSlider").dateRangeSlider("bounds").min)/ (1000 * 3600 * 24));
+
+    // Render the visualisation based on the dateRangeSlider values 
+    renderData(full_data,nd,os);
+};
+
+$(document).ready(function(){
+  // Ingestion of the client data as served by the web service (JSON)
+  d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, json) {
+
+    if (error) return console.warn(error);
+    full_data = json.rows;
+
+    var ds = new Date(dateStart).add(parseInt(full_data[0].d)-1).days();
+    var de = new Date(dateStart).add(parseInt(full_data[full_data.length-1].d)-1).days();
+
+    var de_default = new Date(dateStart).add(parseInt(full_data[0].d)-1+90).days();
+    if (de<de_default)
+    {
+      de_default = de;
+    }
+    // Setting the min and the max for the date range slider
+    $("#dateSlider").dateRangeSlider({
+      "defaultValues":{min: ds, max: de_default},
+      "bounds":{min: ds, max: de},
+      "range": {max: {days:183}},
+      formatter:function(val){
+        var days = (val.getDate()<10)?('0'+val.getDate()):val.getDate(),
+          month = (val.getMonth()+1<10)?('0'+(val.getMonth()+1)):(val.getMonth()+1),
+          year = val.getFullYear();
+        return days + "/" + month + "/" + year;
+      }
+    }).on("valuesChanged", function(e, data){
+      // Removing all rects
+      svg  = d3.select("body").selectAll("svg").data([]).exit().remove();
+      //rect = svg.selectAll(".hh").data([]).exit().remove();
+      refreshVizFromSlider();
+    });
+
+    refreshVizFromSlider();
+
+  });
+
+  d3.select(self.frameElement).style("height", "2910px");
 
 });
-
-d3.select(self.frameElement).style("height", "2910px");
 
 </script></body></html>
