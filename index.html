@@ -264,7 +264,7 @@ var renderData = function(p_json,p_nbDays,p_offset){
     })
     .append("title")
       .text(function(d) {
-        return dayToString(data[d*48].d,'dd/MM/yy')+" : "+data_day[d-1]+"kWh";
+        return dayToString(data[d*48-1].d,'dd/MM/yy')+" : "+data_day[d-1]+"kWh";
       });
 
   // Adding the labels for the hours
@@ -313,6 +313,17 @@ var renderData = function(p_json,p_nbDays,p_offset){
         })
         .attr("y", cellSize/2+5)
         .attr("class", function (d, i) { return "wl m"; });
+
+  var dtl = ['Daily','total'];
+  var dailyTotalLabel = svg.selectAll(".dtl")
+      .data(d3.range(1,2+1))
+      .enter().append("text")
+        .text(function (d) { 
+          return dtl[d-1];
+        })
+        .attr("x", -30)
+        .attr("y", function(d) { return (48+2+d)*cellSize; })
+        .attr("class", function (d, i) { return "dtl m"; });
 }
 
 var refreshVizFromSlider = function(){
