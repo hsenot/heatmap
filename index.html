@@ -11,7 +11,6 @@ body {
 }
 
 .hh {
-  fill: #fff;
   stroke: #222;
 }
 
@@ -76,7 +75,7 @@ var QueryString = function () {
 var clientId = QueryString.client_id;
 
 // Various variables :-)
-var full_data,color;
+var full_data,color,colord;
 var svg,rect;
 var cellSize = 7;
 var nbPrdByDay = 48;
@@ -110,11 +109,13 @@ var renderData = function(p_json,p_nbDays,p_offset){
 
   // Offset and number of days allow to slice the data to just the piece needed
   var data = p_json.slice(p_offset*48,nbDataItemsToRead+p_offset*48+1);
+  var data_day = [];
 
   // Arrays to store elements to label
   var datesToLabel=[], weekEndToLabel = [], dayOfTheWeek;
 
   var currentData, minData, maxData, avgData = 0.0;
+  var day_value,minDataDay,maxDataDay,avgDataDay = 0.0;
   
   // Data scanning to set min/max/avg and flag elements to label
   for (i=0;i<nbDataItemsToRead;i++)
@@ -140,6 +141,9 @@ var renderData = function(p_json,p_nbDays,p_offset){
 
     if (data[i].p ==1)
     {
+      // Initialising the array value
+      data_day[Math.floor(i/48)]=currentData;
+
       if (dayToString(data[i].d,'d')=="1")
       {
         datesToLabel.push(data[i].d);
@@ -150,17 +154,47 @@ var renderData = function(p_json,p_nbDays,p_offset){
         weekEndToLabel.push(data[i].d);
       }
     }
+    else
+    {
+      // Aggregating the numbers per day
+      data_day[Math.floor(i/48)] += currentData;
+    }
+
+    if (data[i].p ==48)
+    {
+      day_value = data_day[Math.floor(i/48)];
+      data_day[Math.floor(i/48)] = Math.round(day_value*1000)/1000;
+
+      if (!minDataDay || minDataDay > day_value)
+      {
+        minDataDay = day_value;
+      }
+      if (!maxDataDay || maxDataDay < day_value)
+      {
+        maxDataDay = day_value;
+      }
+      avgDataDay += day_value;
+    }
+
   }
 
   minData = parseFloat(minData);
   maxData = parseFloat(maxData);
   avgData = (minData+maxData)/2;
 
+  minDataDay = parseFloat(minDataDay);
+  maxDataDay = parseFloat(maxDataDay);
+  avgDataDay = (minDataDay+maxDataDay)/2;
+
   // Number of days to substract, so that the first data day is 1
   var dayStart = data[0].d-1;
 
   color = d3.scale.linear()
     .domain([minData, avgData, maxData])
+    .range(["green", "yellow", "red"]);
+
+  colord = d3.scale.linear()
+    .domain([minDataDay, avgDataDay, maxDataDay])
     .range(["green", "yellow", "red"]);
 
   // Request only as many days as the data can support
@@ -185,6 +219,15 @@ var renderData = function(p_json,p_nbDays,p_offset){
       .attr("height", cellSize)
   ;
 
+  rectd = svg.selectAll(".dd")
+    .data(
+      d3.range(1,nbDays+1)
+    )
+    .enter().append("rect")
+      .attr("width", cellSize)
+      .attr("height", cellSize)
+  ;
+
   rect.
     attr("class", function(d) {
         return "hh";
@@ -201,6 +244,27 @@ var renderData = function(p_json,p_nbDays,p_offset){
     .append("title")
       .text(function(d) {
         return dayToString(data[d-1].d,'dd/MM/yy')+" ("+hourPrd[data[d-1].p]+"): "+data[d-1].k+"kWh";
+      });
+
+  rectd.
+    attr("class", function(d) {
+        return "dd";
+    })
+    .attr("style", function(d) {
+      return "fill:"+colord(data_day[d-1])+";";
+    })
+    .attr("x", function(d) {
+      return (data[d*48].d-dayStart-1) * cellSize; 
+    })
+    .attr("y", function(d) { 
+      return (48+2) * cellSize; 
+    })
+    .attr("height", function(d) {
+      return data_day[d-1];
+    })
+    .append("title")
+      .text(function(d) {
+        return dayToString(data[d*48].d,'dd/MM/yy')+" : "+data_day[d-1]+"kWh";
       });
 
   // Adding the labels for the hours
