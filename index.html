@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Taking Action(s)</title>
+    <title>Heatmap</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap -->
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -38,6 +38,15 @@ text.title {
   fill: #666;
 }
 
+p {
+  margin:0;
+}
+
+.well {
+  padding:8px;
+  margin-bottom: 0px;
+}
+
 </style>
 </head>
 <body>
@@ -50,23 +59,37 @@ text.title {
   <div id="dateSlider"></div>
 </div>
 
+<div class="container" style="padding-top:20px;font-size:12px;">
+  <div class="row text-center">
+    <div class="well col-xs-3">
+      <p> Consumption<span class="glyphicon glyphicon-question-sign pull-right"></span><br>
+         <span id="metric1" style="font-size:24px;"></span><br>
+         kWh
+      </p>
+    </div>
+    <div class="col-xs-1">
+    </div>
+    <div class="well col-xs-3">
+      <p> Daily average<span class="glyphicon glyphicon-question-sign pull-right"></span><br>
+         <span id="metric2" style="font-size:24px;"></span><br>
+         kWh/day
+      </p>
+    </div>
+  </div>
+</div>
+
 <script src="d3/d3.v3.min.js"></script>
 <script src="date.js"></script>
-<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="jquery-1.9.1.min.js"></script>
 
 <script src="bootstrap/js/bootstrap.min.js"></script>
 <!-- jQuery UI plugin, requirement for Flip! -->
-<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+<script src="jquery-ui.min.js"></script>
 <!--script src="../lib/jquery.mousewheel.min.js"></script -->
 <script src="jQRangeSlider/jQDateRangeSlider-min.js"></script>
 <script>
 
-
-
 // Inspired from example at: http://bl.ocks.org/mbostock/4063318
-// Another good example could be: http://bl.ocks.org/tjdecke/5558084
-// Another example for analysis of hourly patterns within a week could be: http://prcweb.co.uk/lab/circularheat/
-// Using the floor plan with D3: http://dciarletta.github.io/d3-floorplan/
 var QueryString = function () {
   // This function is anonymous, is executed immediately and 
   // the return value is assigned to QueryString!
@@ -180,7 +203,7 @@ var renderData = function(p_json,p_nbDays,p_offset){
       data_day[Math.floor(i/48)] += currentData;
     }
 
-    if (data[i].p ==48)
+    if (data[i].p == 48)
     {
       day_value = data_day[Math.floor(i/48)];
       data_day[Math.floor(i/48)] = Math.round(day_value*1000)/1000;
@@ -204,7 +227,10 @@ var renderData = function(p_json,p_nbDays,p_offset){
 
   minDataDay = parseFloat(minDataDay);
   maxDataDay = parseFloat(maxDataDay);
-  avgDataDay = (minDataDay+maxDataDay)/2;
+  // Avg data day contains the sum of all consumption days
+  $('#metric1').html(Math.round(avgDataDay));
+  avgDataDay = avgDataDay/(nbDataItemsToRead/48);
+  $('#metric2').html(Math.round(avgDataDay*10)/10);
 
   // Number of days to substract, so that the first data day is 1
   var dayStart = data[0].d-1;
@@ -228,7 +254,7 @@ var renderData = function(p_json,p_nbDays,p_offset){
       .attr("height", height)
       .attr("class", "RdYlGn")
     .append("g")
-      .attr("transform", "translate(" + 40 + "," + 60 + ")");
+      .attr("transform", "translate(" + 40 + "," + 35 + ")");
 
   rect = svg.selectAll(".hh")
     .data(
@@ -347,7 +373,7 @@ var renderData = function(p_json,p_nbDays,p_offset){
 
   var end =  +new Date();  // log end timestamp
   var diff = end - start;
-  $('#timeRendering').html("Graph rendered in "+diff+"ms");
+  $('#timeRendering').html("Rendered in "+diff+"ms");
       
 }
 
@@ -390,12 +416,11 @@ $(document).ready(function(){
     }).on("valuesChanged", function(e, data){
       // Removing all rects
       svg  = d3.select("body").selectAll("svg").data([]).exit().remove();
-      //rect = svg.selectAll(".hh").data([]).exit().remove();
+      // Rendering the data based on period selected in the slider
       refreshVizFromSlider();
     });
 
     refreshVizFromSlider();
-
   });
 
   d3.select(self.frameElement).style("height", "2910px");
