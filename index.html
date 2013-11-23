@@ -1,8 +1,20 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="utf-8">
-<link rel="stylesheet" href="jQRangeSlider/css/iThing.css" type="text/css" />
+  <head>
+    <title>Taking Action(s)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!-- jQRangeSlider -->
+    <link rel="stylesheet" href="jQRangeSlider/css/iThing.css" type="text/css" />
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+
 <style>
 
 body {
@@ -30,6 +42,10 @@ text.title {
 </head>
 <body>
 
+<div class="pull-right">
+  <div id="timeRendering"></div>
+</div>
+
 <div style="padding-left:50px;padding-right:50px;">
   <div id="dateSlider"></div>
 </div>
@@ -37,6 +53,9 @@ text.title {
 <script src="d3/d3.v3.min.js"></script>
 <script src="date.js"></script>
 <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+
+<script src="bootstrap/js/bootstrap.min.js"></script>
+<!-- jQuery UI plugin, requirement for Flip! -->
 <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
 <!--script src="../lib/jquery.mousewheel.min.js"></script -->
 <script src="jQRangeSlider/jQDateRangeSlider-min.js"></script>
@@ -104,6 +123,7 @@ var dayToString  = function(inData,format){
 }
 
 var renderData = function(p_json,p_nbDays,p_offset){
+  var start = +new Date();  // log start timestamp
   // Number of days of data should be less than total data available
   var nbDataItemsToRead = Math.min(p_json.length-p_offset*48, p_nbDays*48);
 
@@ -324,6 +344,11 @@ var renderData = function(p_json,p_nbDays,p_offset){
         .attr("x", -30)
         .attr("y", function(d) { return (48+2+d)*cellSize; })
         .attr("class", function (d, i) { return "dtl m"; });
+
+  var end =  +new Date();  // log end timestamp
+  var diff = end - start;
+  $('#timeRendering').html("Graph rendered in "+diff+"ms");
+      
 }
 
 var refreshVizFromSlider = function(){
