@@ -117,7 +117,7 @@ var QueryString = function () {
 var clientId = QueryString.client_id;
 
 // Various variables :-)
-var full_data,color,colord;
+var full_data,color,colord,heightd;
 var svg,rect;
 var cellSize = 7;
 var nbPrdByDay = 48;
@@ -243,6 +243,10 @@ var renderData = function(p_json,p_nbDays,p_offset){
     .domain([minDataDay, avgDataDay, maxDataDay])
     .range(["green", "yellow", "red"]);
 
+  heightd = d3.scale.linear()
+    .domain([minDataDay, maxDataDay])
+    .range([cellSize, 10*cellSize]);
+
   // Request only as many days as the data can support
   var nbDays = Math.min(p_nbDays,data.length/nbPrdByDay);
 
@@ -306,7 +310,7 @@ var renderData = function(p_json,p_nbDays,p_offset){
       return (48+2) * cellSize; 
     })
     .attr("height", function(d) {
-      return data_day[d-1];
+      return heightd(data_day[d-1]);
     })
     .append("title")
       .text(function(d) {
