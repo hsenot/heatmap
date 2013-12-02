@@ -123,6 +123,7 @@ var cellSize = 7;
 var nbPrdByDay = 48;
 var offset = QueryString.offset?parseInt(QueryString.offset):0;
 var nbDays = QueryString.days?parseInt(QueryString.days):180;
+var maxNumberDaysDisplayed = 365;
 var width = (nbDays+1)*cellSize*2,
     height = (nbPrdByDay+1)*cellSize+150;
 var hourPrd = {
@@ -238,6 +239,7 @@ var renderData = function(p_json,p_nbDays,p_offset){
   color = d3.scale.linear()
     .domain([minData, avgData, maxData])
     .range(["green", "yellow", "red"]);
+  //  .range(["#0B0B61", "pink","yellow"]);
 
   colord = d3.scale.linear()
     .domain([minDataDay, avgDataDay, maxDataDay])
@@ -410,7 +412,7 @@ $(document).ready(function(){
     $("#dateSlider").dateRangeSlider({
       "defaultValues":{min: ds, max: de_default},
       "bounds":{min: ds, max: de},
-      "range": {max: {days:183}},
+      "range": {max: {days:maxNumberDaysDisplayed}},
       formatter:function(val){
         var days = (val.getDate()<10)?('0'+val.getDate()):val.getDate(),
           month = (val.getMonth()+1<10)?('0'+(val.getMonth()+1)):(val.getMonth()+1),
