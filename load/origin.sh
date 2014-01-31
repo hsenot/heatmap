@@ -4,9 +4,6 @@
 # sudo apt-get install python-pdfminer
 
 # M 10 parameter required so that each line in the input PDF is maintained as a line in the text output 
-echo "SMD file:",$1
-echo "Staging area:",$2
-
 pdf2txt -o $2/nmi.txt -M 10 $1
 
 # Extracting only lines that start with a day of the week abbreviation
