@@ -11,7 +11,6 @@ cat $2/nmi.txt | grep '^Mon \|^Tue \|^Wed \|^Thu \|^Fri \|^Sat \|^Sun ' > $2/nmi
 START_DATE_STR=`cat $2/nmi.txt | grep 'Date Range .* to ' | cut -d " " -f3`
 
 # Loading the content of this temporary file in the staging table
-DIR=$(cd $(dirname "$0"); pwd)
 psql -U ee_app -d ee -c "truncate table staging_origin1"
 psql -U ee_app -d ee -c "copy staging_origin1 (content) from '$2/nmi2.txt'"
 

@@ -1,7 +1,6 @@
 # This scripts extracts information from an AGL CSV file
 
 # Removing trailing commas as they mess around with the CSV import
-DIR=$(cd $(dirname "$0"); pwd)
 cat $1 | sed 's/"A",/"A"/' > $2/nmi.txt
 
 # Loading the content of this temporary file in the staging table
