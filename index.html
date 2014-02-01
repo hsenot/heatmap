@@ -123,8 +123,8 @@ var cellSize = 7;
 var nbPrdByDay = 48;
 var offset = QueryString.offset?parseInt(QueryString.offset):0;
 var nbDays = QueryString.days?parseInt(QueryString.days):180;
-var maxNumberDaysDisplayed = 365;
-var width = (nbDays+1)*cellSize*2,
+var maxNumberDaysDisplayed = 183;
+var width = (maxNumberDaysDisplayed+1)*cellSize+40,
     height = (nbPrdByDay+1)*cellSize+150;
 var hourPrd = {
   1:"00:30", 2:"01:00", 3:"01:30", 4:"02:00", 5:"02:30", 6:"03:00", 7:"03:30", 8:"04:00",
