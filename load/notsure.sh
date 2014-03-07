@@ -11,4 +11,4 @@ psql -U ee_app -d ee -c "truncate table staging_notsure"
 psql -U ee_app -d ee -c "copy staging_notsure (nmi, day, \"interval\", endtime, kwh, net_kwh, kvarh, net_kvarh, kva, kw, quality_status, timeslice, peak, offpeak, shoulder) from '$2/nmi.csv' CSV HEADER"
 
 # Cleaning up after oneself
-#rm $2/nmi.csv
+rm $2/nmi.csv
