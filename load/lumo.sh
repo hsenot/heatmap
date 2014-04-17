@@ -1,0 +1,6 @@
+# This script extracts information from an Lumo CSV file
+
+# Loading the content of this CSV file in the staging table
+psql -U ee_app -d ee -c "truncate table staging_lumo"
+psql -U ee_app -d ee -c "copy staging_lumo (nmi, intervalreaddate,meterserialnumber, energydirection, uom, registerid, controlload, p1, t1, p2, t2, p3, t3, p4, t4, p5, t5, p6, t6, p7, t7, p8, t8, p9, t9, p10, t10, p11, t11, p12, t12, p13, t13, p14, t14, p15, t15, p16, t16, p17, t17, p18, t18, p19, t19, p20, t20, p21, t21, p22, t22, p23, t23, p24, t24, p25, t25, p26, t26, p27, t27, p28, t28, p29, t29, p30, t30, p31, t31, p32, t32, p33, t33, p34, t34, p35, t35, p36, t36, p37, t37, p38, t38, p39, t39, p40, t40, p41, t41, p42, t42, p43, t43, p44, t44, p45, t45, p46, t46, p47, t47, p48, t48, p49, t49, p50, t50, p51, t51, p52, t52, p53, t53, p54, t54, p55, t55, p56, t56, p57, t57, p58, t58, p59, t59, p60, t60, p61, t61, p62, t62, p63, t63, p64, t64, p65, t65, p66, t66, p67, t67, p68, t68, p69, t69, p70, t70, p71, t71, p72, t72, p73, t73, p74, t74, p75, t75, p76, t76, p77, t77, p78, t78, p79, t79, p80, t80, p81, t81, p82, t82, p83, t83, p84, t84, p85, t85, p86, t86, p87, t87, p88, t88, p89, t89, p90, t90, p91, t91, p92, t92, p93, t93, p94, t94, p95, t95, p96, t96) from '$1' CSV HEADER"
+
