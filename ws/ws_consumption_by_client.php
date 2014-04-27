@@ -17,6 +17,7 @@ try {
 select day as d,prd as p,kwh as k
 from consumption
 where client_id=$p_client_id
+order by 1,2
 ENDSQL;
 
 	//echo $sql;
