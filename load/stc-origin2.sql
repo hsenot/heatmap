@@ -2,7 +2,7 @@
 insert into consumption (client_id,day,prd,kwh)
 select
 {$v_client_id} as client_id,
-((case when (length(dt)=8) then to_date(dt,'DD/MM/YY') else to_date(dt,'DD/MM/YYYY') end)-date '01/01/2010')+1 as day,
+((case when (length(dt)=8) then to_date(dt,'DD/MM/YY') when (length(dt)=10) then to_date(dt,'DD/MM/YYYY') else to_date(dt,'DD/Mon/YYYY') end)-date '01/01/2010')+1 as day,
 p as prd,
 k as kwh
 from

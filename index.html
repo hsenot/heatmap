@@ -65,7 +65,7 @@ p {
 
 <div class="container" style="padding-top:20px;font-size:12px;">
   <div class="row text-center">
-    <div class="well col-xs-3">
+    <div class="well col-xs-2">
       <p> Consumption<span class="glyphicon glyphicon-question-sign pull-right"></span><br>
          <span id="metric1" style="font-size:24px;"></span><br>
          kWh
@@ -73,7 +73,7 @@ p {
     </div>
     <div class="col-xs-1">
     </div>
-    <div class="well col-xs-3">
+    <div class="well col-xs-2">
       <p> Daily average<span class="glyphicon glyphicon-question-sign pull-right"></span><br>
          <span id="metric2" style="font-size:24px;"></span><br>
          kWh/day
@@ -81,7 +81,7 @@ p {
     </div>
     <div class="col-xs-1">
     </div>
-    <div class="well col-xs-4">
+    <div class="well col-xs-3">
       <p> Solar compatibility<span class="glyphicon glyphicon-question-sign pull-right"></span>
         <ul id="system_size" class="pagination center">
           <li><a href="#">2kW</a></li>
@@ -91,6 +91,14 @@ p {
           <li><a href="#">6kW</a></li>
         </ul> <br>      
          <span id="metric3" style="font-size:24px;">loading ...</span><br>
+      </p>
+    </div>
+    <div class="col-xs-1">
+    </div>
+    <div class="well col-xs-2">
+      <p> Air conditioning size<span class="glyphicon glyphicon-question-sign pull-right"></span><br>
+         <span id="metric4" style="font-size:24px;"></span><br>
+         kW
       </p>
     </div>
   </div>
@@ -240,11 +248,11 @@ var renderData = function(p_json,p_nbDays,p_offset){
 
   }
 
-  minData = parseFloat(minData);
+  minData = 0.0;
   maxData = parseFloat(maxData);
   avgData = (minData+maxData)/2;
 
-  minDataDay = parseFloat(minDataDay);
+  minDataDay = 0.0;
   maxDataDay = parseFloat(maxDataDay);
   // Avg data day contains the sum of all consumption days
   $('#metric1').html(Math.round(avgDataDay));
@@ -439,6 +447,15 @@ $(document).ready(function(){
       $('#system_size li.active').removeClass("active");
       $(e.target.parentElement).addClass("active");
     });
+
+  });
+
+  d3.json("ws/ws_equipment_by_client.php?client_id="+clientId, function(error, json) {
+
+    if (error) return console.warn(error);
+
+    // Update the metrics
+    $('#metric4').html(json.rows[0].aircon_size_kw);
 
   });
 

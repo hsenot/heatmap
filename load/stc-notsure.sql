@@ -24,10 +24,15 @@ from
 (
 select 
 id,
-case (length(endtime))
-	when 8 then '00:00:00'
-	else
-	substr(endtime,10,5)||':00'
+case
+ when (length(endtime) <= 10) then '00:00:00'
+ else
+ (
+	case length(split_part(endtime,' ',2))
+	when 4 then '0'||substr(split_part(endtime,' ',2),0,5)||':00'
+	when 5 then substr(split_part(endtime,' ',2),0,6)||':00'
+	end
+ )
 end as time,
 kwh as kwh
 from staging_notsure
