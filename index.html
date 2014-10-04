@@ -139,6 +139,17 @@ var QueryString = function () {
     return query_string;
 } ();
 
+// Parameterisation of the source
+// Data source (URL endpoint)
+var paramURLconsumption = QueryString.keyURL?QueryString.keyURL:"ws/ws_consumption_by_client.php";
+var keyClient = QueryString.keyClient?QueryString.keyClient:"client_id";
+// Date key (i.e. property holding the date)
+var keyDate = QueryString.keyDate?QueryString.keyDate:"d";
+// Period key (i.e. property holding the period number, 1-48)
+var keyPeriod = QueryString.keyPeriod?QueryString.keyPeriod:"p";
+// Demand key (i.e. property holding the consumption in kwh) 
+var keyConsumption = QueryString.keyConsumption?QueryString.keyConsumption:"k";
+
 // Current client
 var clientId = QueryString.client_id;
 
@@ -192,7 +203,7 @@ var renderData = function(p_json,p_nbDays,p_offset){
   {
     if (data[i])
     {
-      currentData = parseFloat(data[i].k);
+      currentData = parseFloat(data[i][keyConsumption]);
     }
     else
     {
@@ -209,19 +220,19 @@ var renderData = function(p_json,p_nbDays,p_offset){
     }
     avgData += currentData;
 
-    if (data[i].p ==1)
+    if (data[i][keyPeriod] ==1)
     {
       // Initialising the array value
       data_day[Math.floor(i/48)]=currentData;
 
-      if (dayToString(data[i].d,'d')=="1")
+      if (dayToString(data[i][keyDate],'d')=="1")
       {
-        datesToLabel.push(data[i].d);
+        datesToLabel.push(data[i][keyDate]);
       }
-      dayOfTheWeek = dayToString(data[i].d,'dddd');
+      dayOfTheWeek = dayToString(data[i][keyDate],'dddd');
       if (dayOfTheWeek=="Saturday" || dayOfTheWeek=="Sunday")
       {
-        weekEndToLabel.push(data[i].d);
+        weekEndToLabel.push(data[i][keyDate]);
       }
     }
     else
@@ -230,7 +241,7 @@ var renderData = function(p_json,p_nbDays,p_offset){
       data_day[Math.floor(i/48)] += currentData;
     }
 
-    if (data[i].p == 48)
+    if (data[i][keyPeriod] == 48)
     {
       day_value = data_day[Math.floor(i/48)];
       data_day[Math.floor(i/48)] = Math.round(day_value*1000)/1000;
@@ -260,7 +271,7 @@ var renderData = function(p_json,p_nbDays,p_offset){
   $('#metric2').html(Math.round(avgDataDay*10)/10);
 
   // Number of days to substract, so that the first data day is 1
-  var dayStart = data[0].d-1;
+  var dayStart = data[0][keyDate]-1;
 
   color = d3.scale.linear()
     .domain([minData, avgData, maxData])
@@ -311,17 +322,17 @@ var renderData = function(p_json,p_nbDays,p_offset){
         return "hh";
     })
     .attr("style", function(d) {
-      return "fill:"+color(data[d-1].k)+";";
+      return "fill:"+color(data[d-1][keyConsumption])+";";
     })
     .attr("x", function(d) {
-      return (data[d-1].d-dayStart) * cellSize; 
+      return (data[d-1][keyDate]-dayStart) * cellSize; 
     })
     .attr("y", function(d) { 
-      return data[d-1].p * cellSize; 
+      return data[d-1][keyPeriod] * cellSize; 
     })
     .append("title")
       .text(function(d) {
-        return dayToString(data[d-1].d,'dd/MM/yy')+" ("+hourPrd[data[d-1].p]+"): "+data[d-1].k+"kWh";
+        return dayToString(data[d-1][keyDate],'dd/MM/yy')+" ("+hourPrd[data[d-1][keyPeriod]]+"): "+data[d-1][keyConsumption]+"kWh";
       });
 
   rectd.
@@ -332,7 +343,7 @@ var renderData = function(p_json,p_nbDays,p_offset){
       return "fill:"+colord(data_day[d-1])+";";
     })
     .attr("x", function(d) {
-      return (data[d*48].d-dayStart-1) * cellSize; 
+      return (data[d*48][keyDate]-dayStart-1) * cellSize; 
     })
     .attr("y", function(d) { 
       return (48+2) * cellSize; 
@@ -342,7 +353,7 @@ var renderData = function(p_json,p_nbDays,p_offset){
     })
     .append("title")
       .text(function(d) {
-        return dayToString(data[d*48-1].d,'dd/MM/yy')+" : "+data_day[d-1]+"kWh";
+        return dayToString(data[d*48-1][keyDate],'dd/MM/yy')+" : "+data_day[d-1]+"kWh";
       });
 
   // Adding the labels for the hours
@@ -460,15 +471,15 @@ $(document).ready(function(){
   });
 
   // Ingestion of the client data as served by the web service (JSON)
-  d3.json("ws/ws_consumption_by_client.php?client_id="+clientId, function(error, json) {
+  d3.json(paramURLconsumption+"?"+keyClient+"="+clientId, function(error, json) {
 
     if (error) return console.warn(error);
     full_data = json.rows;
 
-    var ds = new Date(dateStart).add(parseInt(full_data[0].d)-1).days();
-    var de = new Date(dateStart).add(parseInt(full_data[full_data.length-1].d)-1).days();
+    var ds = new Date(dateStart).add(parseInt(full_data[0][keyDate])-1).days();
+    var de = new Date(dateStart).add(parseInt(full_data[full_data.length-1][keyDate])-1).days();
 
-    var de_default = new Date(dateStart).add(parseInt(full_data[0].d)-1+90).days();
+    var de_default = new Date(dateStart).add(parseInt(full_data[0][keyDate])-1+90).days();
     if (de<de_default)
     {
       de_default = de;
