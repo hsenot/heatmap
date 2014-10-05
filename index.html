@@ -79,28 +79,6 @@ p {
          kWh/day
       </p>
     </div>
-    <div class="col-xs-1">
-    </div>
-    <div class="well col-xs-3">
-      <p> Solar compatibility<span class="glyphicon glyphicon-question-sign pull-right"></span>
-        <ul id="system_size" class="pagination center">
-          <li><a href="#">2kW</a></li>
-          <li class="active"><a href="#">3kW</a></li>
-          <li><a href="#">4kW</a></li>
-          <li><a href="#">5kW</a></li>
-          <li><a href="#">6kW</a></li>
-        </ul> <br>      
-         <span id="metric3" style="font-size:24px;">loading ...</span><br>
-      </p>
-    </div>
-    <div class="col-xs-1">
-    </div>
-    <div class="well col-xs-2">
-      <p> Air conditioning size<span class="glyphicon glyphicon-question-sign pull-right"></span><br>
-         <span id="metric4" style="font-size:24px;"></span><br>
-         kW
-      </p>
-    </div>
   </div>
 </div>
 
@@ -430,79 +408,47 @@ var refreshVizFromSlider = function(){
     renderData(full_data,nd,os);
 };
 
-
-var setSolarCompatibility = function(j,s){
-  for (r in j.rows)
-  {
-    if (j.rows[r].system_size_kw==s)
-    {
-      // Update the overall solar compatibility
-      $('#metric3').html(j.rows[r].self_to_demand_ratio+"%");
-    }
-  }
-}
-
 $(document).ready(function(){
-
-  d3.json("ws/ws_production_by_client.php?client_id="+clientId, function(error, json) {
-
-    if (error) return console.warn(error);
-    setSolarCompatibility(json,"3.0");
-
-    $('#system_size li a').click(function(e){
-      // Extracting the clicked element
-      var sys_size = $(e.target).html().replace("kW","")+".0";
-      setSolarCompatibility(json,sys_size);
-
-      // Managing active style
-      $('#system_size li.active').removeClass("active");
-      $(e.target.parentElement).addClass("active");
-    });
-
-  });
-
-  d3.json("ws/ws_equipment_by_client.php?client_id="+clientId, function(error, json) {
-
-    if (error) return console.warn(error);
-
-    // Update the metrics
-    $('#metric4').html(json.rows[0].aircon_size_kw);
-
-  });
 
   // Ingestion of the client data as served by the web service (JSON)
   d3.json(paramURLconsumption+"?"+keyClient+"="+clientId, function(error, json) {
 
     if (error) return console.warn(error);
     full_data = json.rows;
-
-    var ds = new Date(dateStart).add(parseInt(full_data[0][keyDate])-1).days();
-    var de = new Date(dateStart).add(parseInt(full_data[full_data.length-1][keyDate])-1).days();
-
-    var de_default = new Date(dateStart).add(parseInt(full_data[0][keyDate])-1+90).days();
-    if (de<de_default)
+    if (full_data.length)
     {
-      de_default = de;
-    }
-    // Setting the min and the max for the date range slider
-    $("#dateSlider").dateRangeSlider({
-      "defaultValues":{min: ds, max: de_default},
-      "bounds":{min: ds, max: de},
-      "range": {max: {days:maxNumberDaysDisplayed}},
-      formatter:function(val){
-        var days = (val.getDate()<10)?('0'+val.getDate()):val.getDate(),
-          month = (val.getMonth()+1<10)?('0'+(val.getMonth()+1)):(val.getMonth()+1),
-          year = val.getFullYear();
-        return days + "/" + month + "/" + year;
-      }
-    }).on("valuesChanged", function(e, data){
-      // Removing all rects
-      svg  = d3.select("body").selectAll("svg").data([]).exit().remove();
-      // Rendering the data based on period selected in the slider
-      refreshVizFromSlider();
-    });
+      var ds = new Date(dateStart).add(parseInt(full_data[0][keyDate])-1).days();
+      var de = new Date(dateStart).add(parseInt(full_data[full_data.length-1][keyDate])-1).days();
 
-    refreshVizFromSlider();
+      var de_default = new Date(dateStart).add(parseInt(full_data[0][keyDate])-1+90).days();
+      if (de<de_default)
+      {
+        de_default = de;
+      }
+      // Setting the min and the max for the date range slider
+      $("#dateSlider").dateRangeSlider({
+        "defaultValues":{min: ds, max: de_default},
+        "bounds":{min: ds, max: de},
+        "range": {max: {days:maxNumberDaysDisplayed}},
+        formatter:function(val){
+          var days = (val.getDate()<10)?('0'+val.getDate()):val.getDate(),
+            month = (val.getMonth()+1<10)?('0'+(val.getMonth()+1)):(val.getMonth()+1),
+            year = val.getFullYear();
+          return days + "/" + month + "/" + year;
+        }
+      }).on("valuesChanged", function(e, data){
+        // Removing all rects
+        svg  = d3.select("body").selectAll("svg").data([]).exit().remove();
+        // Rendering the data based on period selected in the slider
+        refreshVizFromSlider();
+      });
+
+      refreshVizFromSlider();
+    }
+    else
+    {
+      alert("There is no data for this client ID.");
+    }
   });
 
   d3.select(self.frameElement).style("height", "690px");
