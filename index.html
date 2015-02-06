@@ -120,6 +120,7 @@ var QueryString = function () {
 // Parameterisation of the source
 // Data source (URL endpoint)
 var paramURLconsumption = QueryString.keyURL?QueryString.keyURL:"ws/ws_consumption_by_client.php";
+var paramURLdataexport  = QueryString.keyURL?QueryString.keyURL:"ws/ws_export_client_data.php";
 var keyClient = QueryString.keyClient?QueryString.keyClient:"client_id";
 // Date key (i.e. property holding the date)
 var keyDate = QueryString.keyDate?QueryString.keyDate:"d";
@@ -446,7 +447,7 @@ $(document).ready(function(){
       refreshVizFromSlider();
 
       // Add the CSV download link
-      $('#csvExport').attr('href','ws/ws_export_client_data.php?client_id='+clientId);
+      $('#csvExport').attr('href',paramURLdataexport+'?'+keyClient+'='+clientId);
     }
     else
     {
